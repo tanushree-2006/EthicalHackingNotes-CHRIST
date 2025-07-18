@@ -1,0 +1,63 @@
+name: Update Fork Users List
+
+on:
+  push:
+    branches:
+      - main
+      - master  # Include your default branch
+
+jobs:
+  update-fork-list:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Fork Users and Update Markdown
+        id: generate
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const allForks = await github.paginate(
+              github.rest.repos.listForks,
+              { owner, repo, per_page: 100 }
+            );
+
+            const forkUsernames = allForks.map(fork => `- [@${fork.owner.login}](https://github.com/${fork.owner.login})`);
+            const forkCount = forkUsernames.length;
+
+            const newContent = `
+# Repo Fork Users
+
+Total Forks: **${forkCount}**
+
+## List of Fork Users:
+${forkUsernames.join('\n')}
+`.trim();
+
+            fs.writeFileSync('repo-master.md', newContent);
+
+            return newContent;
+
+      - name: Check for changes
+        run: |
+          if git diff --exit-code repo-master.md; then
+            echo "No changes in repo-master.md. Skipping commit."
+            exit 0
+          fi
+
+      - name: Commit and Push Changes
+        if: success()  # Only runs if there are changes detected
+        run: |
+          git config user.name "GitHub Action Bot"
+          git config user.email "action@github.com"
+          git add repo-master.md
+          git commit -m "Update repo-master.md with latest fork user list"
+          git push
