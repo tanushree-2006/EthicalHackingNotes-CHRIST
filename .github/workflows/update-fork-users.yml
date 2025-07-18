@@ -33,14 +33,14 @@ jobs:
             const forkUsernames = allForks.map(fork => `- [@${fork.owner.login}](https://github.com/${fork.owner.login})`);
             const forkCount = forkUsernames.length;
 
-            const newContent = `
-# Repo Fork Users
-
-Total Forks: **${forkCount}**
-
-## List of Fork Users:
-${forkUsernames.join('\n')}
-`.trim();
+            const newContent = [
+              '# Repo Fork Users',
+              '',
+              `Total Forks: **${forkCount}**`,
+              '',
+              '## List of Fork Users:',
+              forkUsernames.join('\n')
+            ].join('\n');
 
             fs.writeFileSync('repo-master.md', newContent);
 
