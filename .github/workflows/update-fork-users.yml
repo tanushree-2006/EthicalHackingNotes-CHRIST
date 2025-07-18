@@ -47,7 +47,12 @@ jobs:
       - name: Check for changes in repo-master.md
         id: check_changes
         run: |
-          git diff --quiet repo-master.md || echo "changes_detected=true" >> $GITHUB_ENV
+          git add repo-master.md
+          if git diff --staged --quiet; then
+            echo "No changes detected"
+          else
+            echo "changes_detected=true" >> $GITHUB_ENV
+          fi
 
       - name: Commit and Push Changes if Fork List Updated
         if: env.changes_detected == 'true'
